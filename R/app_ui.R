@@ -1,41 +1,54 @@
-#' The application User-Interface
+#' Application UI
 #'
-#' @param request Internal parameter for `{shiny}`.
-#'     DO NOT REMOVE.
+#' @return A Shiny UI object.
 #' @import shiny
+#' @import bslib
+#' @import bsicons
 #' @noRd
-app_ui <- function(request) {
-  tagList(
-    # Leave this function for adding external resources
-    golem_add_external_resources(),
-    # Your application UI logic
-    fluidPage(
-      golem::golem_welcome_page() # Remove this line to start building your UI
-    )
-  )
-}
+app_ui <- function() {
 
-#' Add external Resources to the Application
-#'
-#' This function is internally used to add external
-#' resources inside the Shiny application.
-#'
-#' @import shiny
-#' @importFrom golem add_resource_path activate_js favicon bundle_resources
-#' @noRd
-golem_add_external_resources <- function() {
-  add_resource_path(
+  golem::add_resource_path(
     "www",
-    app_sys("app/www")
+    system.file("app/www", package = "StatPlot")
   )
 
-  tags$head(
-    favicon(),
-    bundle_resources(
-      path = app_sys("app/www"),
-      app_title = "StatPlot"
+  bslib::page_navbar(
+    title = div(
+      style = "display: flex; align-items: center; gap: 10px; margin-top: 4px;",
+      img(src = "www/hexsticker_StatPlot.png", height = "38px"),
+      span("StatPlot", style = "font-weight: 600;")
+    ),
+    theme = tema_app,
+    lang  = "es",
+
+    bslib::nav_panel(
+      title = "Datos",
+      icon  = bsicons::bs_icon("upload"),
+      mod_upload_ui("upload")
+    ),
+
+    # Módulos futuros — descomentar cuando estén listos:
+    # bslib::nav_panel(
+    #   title = "Gráfico",
+    #   icon  = bsicons::bs_icon("bar-chart"),
+    #   mod_grafico_ui("grafico")
+    # ),
+    # bslib::nav_panel(
+    #   title = "Composición",
+    #   icon  = bsicons::bs_icon("grid"),
+    #   mod_patchwork_ui("patchwork")
+    # ),
+
+    bslib::nav_spacer(),
+
+    bslib::nav_panel(
+      title = "Acerca de",
+      icon  = bsicons::bs_icon("info-circle"),
+      mod_acerca_de_ui("acerca_de")
+    ),
+
+    bslib::nav_item(
+      tags$span(class = "text-white-50 small", "StatPlot v0.1")
     )
-    # Add here other external resources
-    # for example, you can add shinyalert::useShinyalert()
   )
 }
