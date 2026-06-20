@@ -101,6 +101,17 @@ mod_upload_ui <- function(id) {
                 )
               ),
 
+              tags$hr(),
+              radioButtons(
+                ns("manejo_na"),
+                label    = "Valores perdidos (NA)",
+                choices  = c(
+                  "Conservar"              = "conservar",
+                  "Eliminar filas con NA"  = "eliminar"
+                ),
+                selected = "conservar"
+              ),
+              uiOutput(ns("na_info")),
               uiOutput(ns("info_dataset"))
             ),
 
@@ -115,11 +126,22 @@ mod_upload_ui <- function(id) {
       ), # /PESTAÑA 1
 
       # ══════════════════════════════════════════════════════════════════════
-      # PESTAÑA 2: Explorar variables
+      # PESTAÑA 2: Variables
       # ══════════════════════════════════════════════════════════════════════
       nav_panel(
-        title = tagList(bs_icon("search", class = "me-1"), "Explorar variables"),
+        title = tagList(bs_icon("table", class = "me-1"), "Variables"),
         card_body(
+
+          p(class = "text-muted small mb-3",
+            bs_icon("info-circle", class = "me-1"),
+            "Revisá el tipo detectado para cada variable y corregilo si es necesario. ",
+            "Variables mal tipificadas pueden causar errores al graficar. ",
+            "Podés también ", strong("excluir"), " variables que no necesitás."),
+
+          uiOutput(ns("tabla_tipos")),
+          uiOutput(ns("tipos_aplicados_msg")),
+
+          tags$hr(),
 
           layout_columns(
             col_widths = c(3, 9),
@@ -127,42 +149,33 @@ mod_upload_ui <- function(id) {
 
             div(
               card(
-                card_header(bs_icon("sliders", class = "me-1"), "Variable"),
+                card_header(bs_icon("book", class = "me-1"),
+                            "Tipos de variables"),
                 card_body(
-                  uiOutput(ns("sel_variable")),
-                  uiOutput(ns("badge_tipo")),
-                  tags$hr(),
-                  bslib::accordion(
-                    open = FALSE,
-                    bslib::accordion_panel(
-                      title = tagList(bs_icon("book", class = "me-1"),
-                                      "Tipos de variables"),
-                      tags$ul(class = "small mb-0",
-                        tags$li(
-                          tags$span(class = "badge me-1",
-                                    style = paste0("background:", colores$primario),
-                                    "Numérica continua"),
-                          " — valores en un rango continuo. Ej: peso, temperatura"
-                        ),
-                        tags$li(
-                          tags$span(class = "badge me-1",
-                                    style = paste0("background:", colores$secundario),
-                                    "Numérica discreta"),
-                          " — enteros contables. Ej: número de hijos, conteos"
-                        ),
-                        tags$li(
-                          tags$span(class = "badge me-1",
-                                    style = paste0("background:", colores$acento),
-                                    "Categórica"),
-                          " — grupos o etiquetas. Ej: especie, sexo, país"
-                        ),
-                        tags$li(
-                          tags$span(class = "badge me-1",
-                                    style = "background:#5FA2CE",
-                                    "Temporal"),
-                          " — fechas o tiempos. Ej: año, fecha de muestreo"
-                        )
-                      )
+                  tags$ul(class = "small mb-0",
+                    tags$li(
+                      tags$span(class = "badge me-1",
+                                style = paste0("background:", colores$primario),
+                                "Numérica"),
+                      " — valores continuos o discretos. Ej: peso, temperatura, conteos"
+                    ),
+                    tags$li(
+                      tags$span(class = "badge me-1",
+                                style = paste0("background:", colores$acento),
+                                "Factor"),
+                      " — grupos o etiquetas. Ej: especie, sexo, país, año categórico"
+                    ),
+                    tags$li(
+                      tags$span(class = "badge me-1",
+                                style = "background:#5FA2CE",
+                                "Fecha"),
+                      " — fechas o tiempos. Ej: fecha de muestreo"
+                    ),
+                    tags$li(
+                      tags$span(class = "badge me-1",
+                                style = paste0("background:", colores$texto),
+                                "Excluir"),
+                      " — variable no se usará en los gráficos"
                     )
                   )
                 )
@@ -170,6 +183,7 @@ mod_upload_ui <- function(id) {
             ),
 
             div(
+              uiOutput(ns("sel_variable")),
               uiOutput(ns("resumen_variable")),
               tags$hr(),
               uiOutput(ns("sugerencia_graficos"))
@@ -191,6 +205,15 @@ mod_upload_server <- function(id) {
     # ── Ruta a datos de ejemplo ──────────────────────────────────────────────
     data_path <- app_sys("app/data")
 
+    # ── Objeto .rds del dataset activo (evita doble lectura) ────────────────
+    obj_dataset <- reactive({
+      req(input$fuente != "subir")
+      path <- file.path(data_path, paste0(input$fuente, ".rds"))
+      validate(need(file.exists(path),
+                    paste0("No se encontró el archivo: ", basename(path))))
+      readRDS(path)
+    })
+
     # ── Datos activos ────────────────────────────────────────────────────────
     datos <- reactive({
       if (input$fuente == "subir") {
@@ -201,18 +224,15 @@ mod_upload_server <- function(id) {
                       "No se pudo leer el archivo. Verificá que sea CSV o Excel."))
         df |> dplyr::mutate(dplyr::across(where(is.character), as.factor))
       } else {
-        path <- file.path(data_path, paste0(input$fuente, ".rds"))
-        obj  <- readRDS(path)
-        obj$data
+        obj_dataset()$data |>
+          dplyr::mutate(dplyr::across(where(is.character), as.factor))
       }
     })
 
     # ── Info del dataset ─────────────────────────────────────────────────────
     output$info_dataset <- renderUI({
       if (input$fuente == "subir") return(NULL)
-      path <- file.path(data_path, paste0(input$fuente, ".rds"))
-      obj  <- readRDS(path)
-      m    <- obj$meta
+      m <- obj_dataset()$meta
       div(
         class = "mt-3 p-3 rounded",
         style = paste0("background:", colores$fondo,
@@ -231,7 +251,7 @@ mod_upload_server <- function(id) {
 
     # ── Badges de variables ──────────────────────────────────────────────────
     output$badges_variables <- renderUI({
-      df    <- datos()
+      df    <- datos_final()
       req(df)
       tipos <- sapply(df, clasificar_variable)
       div(
@@ -250,7 +270,7 @@ mod_upload_server <- function(id) {
     # ── Tabla preview ────────────────────────────────────────────────────────
     output$tabla_preview <- DT::renderDT({
       DT::datatable(
-        datos(),
+        datos_final(),
         options = list(
           pageLength = 8,
           scrollX    = TRUE,
@@ -268,7 +288,7 @@ mod_upload_server <- function(id) {
 
     # ── Selector de variable ─────────────────────────────────────────────────
     output$sel_variable <- renderUI({
-      df <- datos()
+      df <- datos_conv()
       req(df)
       selectInput(
         ns("variable"),
@@ -278,31 +298,156 @@ mod_upload_server <- function(id) {
       )
     })
 
-    # ── Badge tipo de variable ───────────────────────────────────────────────
-    tipo_actual <- reactive({
-      df <- datos()
-      req(df, input$variable)
-      clasificar_variable(df[[input$variable]])
+    # ── Tipos definidos por el usuario (StatModels pattern) ─────────────────
+    tipos_usuario <- reactiveVal(NULL)
+
+    # Reset limpio al cambiar dataset
+    observeEvent(input$fuente, {
+      tipos_usuario(NULL)
     })
 
-    output$badge_tipo <- renderUI({
-      tipo <- tipo_actual()
-      div(
-        class = "mt-2",
-        tags$span(
-          class = "badge fs-6",
-          style = paste0("background:", color_tipo(tipo)),
-          paste("Tipo:", tipo)
+    # Observar cambios en los selectores de tipo por variable
+    observe({
+      df <- datos()
+      req(df)
+      tu <- lapply(names(df), function(nm) {
+        val <- input[[paste0("tipo_", nm)]]
+        if (!is.null(val)) val else NULL
+      })
+      names(tu) <- names(df)
+      tu <- tu[!sapply(tu, is.null)]
+      if (length(tu) > 0) tipos_usuario(tu)
+    })
+
+    # ── Tabla de tipos (patrón StatModels) ──────────────────────────────────
+    output$tabla_tipos <- renderUI({
+      df <- datos()
+      req(df)
+      tu <- tipos_usuario()
+
+      filas <- lapply(names(df), function(nm) {
+        col    <- df[[nm]]
+        actual <- if (is.factor(col) || is.character(col)) "factor"
+                  else if (inherits(col, c("Date","POSIXct","POSIXlt"))) "fecha"
+                  else "numeric"
+        icono  <- if (actual == "factor")
+          bs_icon("tag-fill", style = paste0("color:", colores$acento))
+        else if (actual == "fecha")
+          bs_icon("calendar", style = "color:#5FA2CE")
+        else
+          bs_icon("123", style = paste0("color:", colores$primario))
+
+        sel <- if (!is.null(tu) && !is.null(tu[[nm]])) tu[[nm]] else actual
+
+        tags$tr(
+          tags$td(style = "vertical-align:middle; padding:5px 8px;",
+                  div(class = "d-flex align-items-center gap-2", icono, strong(nm))),
+          tags$td(style = "vertical-align:middle; padding:5px 8px;",
+                  tags$span(class = "badge",
+                            style = paste0("background:",
+                              if (actual == "factor") colores$acento
+                              else if (actual == "fecha") "#5FA2CE"
+                              else colores$primario,
+                              "; font-size:0.75rem;"),
+                            if (actual == "factor") "Factor"
+                            else if (actual == "fecha") "Fecha"
+                            else "Numérico")),
+          tags$td(style = "padding:5px 8px;",
+                  selectInput(
+                    inputId  = ns(paste0("tipo_", nm)),
+                    label    = NULL,
+                    choices  = c("Numérico" = "numeric",
+                                 "Factor (categórico)" = "factor",
+                                 "Fecha" = "fecha",
+                                 "Excluir" = "excluir"),
+                    selected = sel, width = "190px")),
+          tags$td(style = "vertical-align:middle; padding:5px 8px;",
+                  if (!is.null(tu) && !is.null(tu[[nm]]) && tu[[nm]] != actual)
+                    tags$span(class = "badge",
+                              style = paste0("background:", colores$exito),
+                              "Modificado")
+                  else
+                    tags$span(class = "text-muted small", "Sin cambios"))
+        )
+      })
+
+      tagList(
+        tags$table(
+          class = "table table-sm table-hover small mb-0",
+          tags$thead(
+            style = paste0("background:", colores$primario,
+                           " !important; color:#fff !important;"),
+            tags$tr(
+              tags$th(style = "padding:7px 8px;", "Variable"),
+              tags$th(style = "padding:7px 8px;", "Tipo detectado"),
+              tags$th(style = "padding:7px 8px;", "Tipo a usar"),
+              tags$th(style = "padding:7px 8px;", "Estado")
+            )
+          ),
+          tags$tbody(filas)
         )
       )
     })
 
-    # ── Resumen de variable ──────────────────────────────────────────────────
+    output$tipos_aplicados_msg <- renderUI({
+      tu <- tipos_usuario()
+      if (is.null(tu)) return(NULL)
+      df <- datos()
+      req(df)
+      n_cambios <- sum(sapply(names(tu), function(nm) {
+        if (!nm %in% names(df)) return(FALSE)
+        col    <- df[[nm]]
+        actual <- if (is.factor(col) || is.character(col)) "factor"
+                  else if (inherits(col, c("Date","POSIXct","POSIXlt"))) "fecha"
+                  else "numeric"
+        !is.null(tu[[nm]]) && tu[[nm]] != actual && tu[[nm]] != "excluir"
+      }))
+      n_excl <- sum(sapply(tu, function(t) !is.null(t) && t == "excluir"))
+      if (n_cambios == 0 && n_excl == 0) return(NULL)
+      div(class = "alert alert-info small py-2 px-3 mt-2 mb-0",
+          bs_icon("check-circle", class = "me-1",
+                  style = paste0("color:", colores$exito)),
+          if (n_cambios > 0) paste0(n_cambios, " variable(s) convertida(s). "),
+          if (n_excl > 0) paste0(n_excl, " variable(s) excluida(s). "),
+          "Los gráficos usarán estos tipos.")
+    })
+
+    # ── Datos con tipos aplicados ────────────────────────────────────────────
+    datos_conv <- reactive({
+      df <- datos()
+      tu <- tipos_usuario()
+      req(df)
+      for (nm in names(df)) {
+        tipo_dest <- if (!is.null(tu) && !is.null(tu[[nm]])) tu[[nm]] else NULL
+        if (is.null(tipo_dest) || tipo_dest == "excluir") next
+        df[[nm]] <- switch(tipo_dest,
+          "factor"  = as.factor(df[[nm]]),
+          "numeric" = suppressWarnings(as.numeric(as.character(df[[nm]]))),
+          "fecha"   = suppressWarnings(as.Date(as.character(df[[nm]]))),
+          df[[nm]]
+        )
+      }
+      # Excluir variables marcadas
+      if (!is.null(tu)) {
+        excluir <- names(tu)[sapply(tu, function(t) !is.null(t) && t == "excluir")]
+        df <- df[, !names(df) %in% excluir, drop = FALSE]
+      }
+      df
+    })
+
+    # ── Tipo actual de variable seleccionada ─────────────────────────────────
+    tipo_actual <- reactive({
+      df <- datos_conv()
+      req(df, input$variable)
+      if (!input$variable %in% names(df)) return("Excluida")
+      clasificar_variable(df[[input$variable]])
+    })
+
+    # ── Resumen de variable — estructura (renderUI solo decide qué mostrar) ──
     output$resumen_variable <- renderUI({
-      df   <- datos()
+      df   <- datos_conv()
       req(df, input$variable)
       tipo <- tipo_actual()
-      x    <- df[[input$variable]]
 
       if (grepl("Numérica", tipo)) {
         tagList(
@@ -312,75 +457,80 @@ mod_upload_server <- function(id) {
             card(
               card_header(bs_icon("bullseye", class = "me-1"),
                           "Tendencia central"),
-              card_body(
-                renderTable({
-                  data.frame(
-                    Estadístico = c("Media", "Mediana"),
-                    Valor = c(
-                      round(mean(x, na.rm = TRUE), 3),
-                      round(median(x, na.rm = TRUE), 3)
-                    )
-                  )
-                }, striped = TRUE, hover = TRUE, bordered = TRUE)
-              )
+              card_body(tableOutput(ns("tbl_tendencia")))
             ),
             card(
               card_header(bs_icon("arrows-expand", class = "me-1"),
                           "Dispersión"),
-              card_body(
-                renderTable({
-                  data.frame(
-                    Estadístico = c("Desv. estándar", "Mín.", "Máx.", "NAs"),
-                    Valor = c(
-                      round(sd(x, na.rm = TRUE), 3),
-                      round(min(x, na.rm = TRUE), 3),
-                      round(max(x, na.rm = TRUE), 3),
-                      sum(is.na(x))
-                    )
-                  )
-                }, striped = TRUE, hover = TRUE, bordered = TRUE)
-              )
+              card_body(tableOutput(ns("tbl_dispersion")))
             )
           )
         )
       } else if (tipo == "Categórica") {
         card(
-          card_header(bs_icon("bar-chart", class = "me-1"),
-                      "Frecuencias"),
-          card_body(
-            renderTable({
-              as.data.frame(table(x)) |>
-                dplyr::rename(Categoría = x, Frecuencia = Freq) |>
-                dplyr::mutate(
-                  Porcentaje = paste0(round(Frecuencia / sum(Frecuencia) * 100, 1), "%")
-                ) |>
-                dplyr::arrange(dplyr::desc(Frecuencia))
-            }, striped = TRUE, hover = TRUE, bordered = TRUE)
-          )
+          card_header(bs_icon("bar-chart", class = "me-1"), "Frecuencias"),
+          card_body(tableOutput(ns("tbl_frecuencias")))
         )
       } else if (tipo == "Temporal") {
         card(
-          card_header(bs_icon("calendar", class = "me-1"),
-                      "Rango temporal"),
-          card_body(
-            renderTable({
-              data.frame(
-                Estadístico = c("Fecha mínima", "Fecha máxima", "NAs"),
-                Valor = c(
-                  as.character(min(x, na.rm = TRUE)),
-                  as.character(max(x, na.rm = TRUE)),
-                  as.character(sum(is.na(x)))
-                )
-              )
-            }, striped = TRUE, hover = TRUE, bordered = TRUE)
-          )
+          card_header(bs_icon("calendar", class = "me-1"), "Rango temporal"),
+          card_body(tableOutput(ns("tbl_temporal")))
         )
       }
     })
 
+    # ── Tablas de resumen — renders independientes ───────────────────────────
+    output$tbl_tendencia <- renderTable({
+      df <- datos_conv()
+      req(df, input$variable)
+      x <- df[[input$variable]]
+      data.frame(
+        Estadístico = c("Media", "Mediana"),
+        Valor       = c(round(mean(x, na.rm = TRUE), 3),
+                        round(median(x, na.rm = TRUE), 3))
+      )
+    }, striped = TRUE, hover = TRUE, bordered = TRUE)
+
+    output$tbl_dispersion <- renderTable({
+      df <- datos_conv()
+      req(df, input$variable)
+      x <- df[[input$variable]]
+      data.frame(
+        Estadístico = c("Desv. estándar", "Mín.", "Máx.", "NAs"),
+        Valor       = c(round(sd(x,  na.rm = TRUE), 3),
+                        round(min(x, na.rm = TRUE), 3),
+                        round(max(x, na.rm = TRUE), 3),
+                        sum(is.na(x)))
+      )
+    }, striped = TRUE, hover = TRUE, bordered = TRUE)
+
+    output$tbl_frecuencias <- renderTable({
+      df <- datos_conv()
+      req(df, input$variable)
+      x <- df[[input$variable]]
+      as.data.frame(table(x)) |>
+        dplyr::rename(Categoría = x, Frecuencia = Freq) |>
+        dplyr::mutate(
+          Porcentaje = paste0(round(Frecuencia / sum(Frecuencia) * 100, 1), "%")
+        ) |>
+        dplyr::arrange(dplyr::desc(Frecuencia))
+    }, striped = TRUE, hover = TRUE, bordered = TRUE)
+
+    output$tbl_temporal <- renderTable({
+      df <- datos_conv()
+      req(df, input$variable)
+      x <- df[[input$variable]]
+      data.frame(
+        Estadístico = c("Fecha mínima", "Fecha máxima", "NAs"),
+        Valor       = c(as.character(min(x, na.rm = TRUE)),
+                        as.character(max(x, na.rm = TRUE)),
+                        as.character(sum(is.na(x))))
+      )
+    }, striped = TRUE, hover = TRUE, bordered = TRUE)
+
     # ── Sugerencia de gráficos ───────────────────────────────────────────────
     output$sugerencia_graficos <- renderUI({
-      df   <- datos()
+      df   <- datos_conv()
       req(df, input$variable)
       tipo <- tipo_actual()
 
@@ -443,8 +593,38 @@ mod_upload_server <- function(id) {
       )
     })
 
+    # ── Manejo de NAs ────────────────────────────────────────────────────────
+    datos_final <- reactive({
+      df <- datos_conv()
+      req(df)
+      if (isTRUE(input$manejo_na == "eliminar")) {
+        df <- tidyr::drop_na(df)
+      }
+      df
+    })
+
+    output$na_info <- renderUI({
+      df_orig  <- datos_conv()
+      df_final <- datos_final()
+      req(df_orig)
+      n_na   <- sum(!stats::complete.cases(df_orig))
+      if (n_na == 0) return(
+        div(class = "alert alert-success small py-1 px-2 mt-2 mb-0",
+            bs_icon("check-circle", class = "me-1"), "Sin valores perdidos.")
+      )
+      n_elim <- nrow(df_orig) - nrow(df_final)
+      if (input$manejo_na == "eliminar")
+        div(class = "alert alert-warning small py-1 px-2 mt-2 mb-0",
+            bs_icon("exclamation-triangle", class = "me-1"),
+            paste0(n_elim, " fila(s) eliminadas. Quedan ", nrow(df_final), " filas."))
+      else
+        div(class = "alert alert-info small py-1 px-2 mt-2 mb-0",
+            bs_icon("info-circle", class = "me-1"),
+            paste0(n_na, " fila(s) con NA. Podés eliminarlas arriba."))
+    })
+
     # ── Retornar datos ───────────────────────────────────────────────────────
-    return(datos)
+    return(datos_final)
 
   })
 }
