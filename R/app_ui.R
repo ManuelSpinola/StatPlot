@@ -25,9 +25,9 @@ app_ui <- function() {
     ),
 
     bslib::nav_panel(
-      title = "Gráfico",
+      title = "ggplot2",
       icon  = bsicons::bs_icon("bar-chart"),
-      mod_grafico_ui("grafico")
+      mod_ggplot2_ui("ggplot2")
     ),
 
     bslib::nav_panel(

@@ -1,10 +1,10 @@
 # =============================================================================
-# mod_grafico.R — Construcción de gráficos ggplot2 para StatPlot
+# mod_ggplot2.R — Construcción de gráficos ggplot2 para StatPlot
 # StatPlot · StatSuite · Manuel Spínola · ICOMVIS · UNA
 #
 # Exporta:
-#   mod_grafico_ui(id)
-#   mod_grafico_server(id, data)
+#   mod_ggplot2_ui(id)
+#   mod_ggplot2_server(id, data)
 # =============================================================================
 
 # ── Helpers internos ──────────────────────────────────────────────────────────
@@ -74,7 +74,7 @@ temas_gg <- c(
 )
 
 # ── UI ────────────────────────────────────────────────────────────────────────
-mod_grafico_ui <- function(id) {
+mod_ggplot2_ui <- function(id) {
   ns <- NS(id)
 
   tagList(
@@ -224,7 +224,7 @@ mod_grafico_ui <- function(id) {
 
 
 # ── Server ────────────────────────────────────────────────────────────────────
-mod_grafico_server <- function(id, data) {
+mod_ggplot2_server <- function(id, data) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 

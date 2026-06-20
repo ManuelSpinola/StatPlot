@@ -85,6 +85,11 @@ mod_upload_ui <- function(id) {
                   "Contaminación río Meuse"    = "meuse",
                   "Peso al nacer"              = "birthwt",
                   "Ácaros oribátidos (mites)"  = "mites",
+                  "── tidyplots ──"            = "",
+                  "Animales"                   = "animals",
+                  "Clima"                      = "climate",
+                  "Energía"                    = "energy",
+                  "Gastos"                     = "spendings",
                   "Subir mi archivo"           = "subir"
                 ),
                 selected = "penguins"
@@ -207,7 +212,7 @@ mod_upload_server <- function(id) {
 
     # ── Objeto .rds del dataset activo (evita doble lectura) ────────────────
     obj_dataset <- reactive({
-      req(input$fuente != "subir")
+      req(input$fuente != "subir", nzchar(input$fuente))
       path <- file.path(data_path, paste0(input$fuente, ".rds"))
       validate(need(file.exists(path),
                     paste0("No se encontró el archivo: ", basename(path))))
