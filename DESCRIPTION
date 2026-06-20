@@ -25,15 +25,15 @@ Imports:
     scales,
     shiny,
     ggrepel,
-    colourpicker
+    colourpicker,
+    tidyr
 Suggests:
     ade4,
     gapminder,
     MASS,
     palmerpenguins,
     sp,
-    vegan,
-    colourpicker
+    vegan
 Encoding: UTF-8
 LazyData: false
 Config/roxygen2/version: 8.0.0
