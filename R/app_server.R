@@ -7,11 +7,13 @@ app_server <- function(input, output, session) {
   # Data module
   app_data <- mod_upload_server("upload")
 
-  mod_acerca_de_server("acerca_de")
+  # Gráfico — devuelve lista reactiva de gráficos guardados
+  graficos_guardados <- mod_grafico_server("grafico", data = app_data)
 
-  # Módulos futuros:
-  # mod_grafico_server("grafico", data = app_data)
-  # mod_patchwork_server("patchwork")
+  # Composición con patchwork
+  mod_patchwork_server("patchwork", graficos = graficos_guardados)
+
+  mod_acerca_de_server("acerca_de")
 
   session$onSessionEnded(function() {})
 }

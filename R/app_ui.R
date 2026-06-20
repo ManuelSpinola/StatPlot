@@ -1,9 +1,6 @@
 #' Application UI
 #'
 #' @return A Shiny UI object.
-#' @import shiny
-#' @import bslib
-#' @import bsicons
 #' @noRd
 app_ui <- function() {
 
@@ -27,17 +24,17 @@ app_ui <- function() {
       mod_upload_ui("upload")
     ),
 
-    # Módulos futuros — descomentar cuando estén listos:
-    # bslib::nav_panel(
-    #   title = "Gráfico",
-    #   icon  = bsicons::bs_icon("bar-chart"),
-    #   mod_grafico_ui("grafico")
-    # ),
-    # bslib::nav_panel(
-    #   title = "Composición",
-    #   icon  = bsicons::bs_icon("grid"),
-    #   mod_patchwork_ui("patchwork")
-    # ),
+    bslib::nav_panel(
+      title = "Gráfico",
+      icon  = bsicons::bs_icon("bar-chart"),
+      mod_grafico_ui("grafico")
+    ),
+
+    bslib::nav_panel(
+      title = "Composición",
+      icon  = bsicons::bs_icon("grid"),
+      mod_patchwork_ui("patchwork")
+    ),
 
     bslib::nav_spacer(),
 
