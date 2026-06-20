@@ -23,7 +23,9 @@ Imports:
     plotly,
     readxl,
     scales,
-    shiny
+    shiny,
+    ggrepel,
+    colourpicker
 Suggests:
     ade4,
     gapminder,
