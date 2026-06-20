@@ -194,7 +194,8 @@ mod_ggplot2_ui <- function(id) {
                       selectInput(ns("tema"), "Tema", choices = temas_gg, selected = "light"),
                       sliderInput(ns("alpha"), "Transparencia", min = 0.1, max = 1,   value = 0.8, step = 0.1),
                       sliderInput(ns("size"),  "Tamaño",        min = 0.5, max = 5,   value = 2,   step = 0.5),
-                      sliderInput(ns("bins"),  "Bins (histograma)", min = 5, max = 100, value = 30, step = 5)
+                      sliderInput(ns("bins"),  "Bins (histograma)", min = 5, max = 100, value = 30, step = 5),
+                      checkboxInput(ns("eje_y_cero"), "Eje Y desde cero", value = FALSE)
                     )
                   ),
                   card(
@@ -578,6 +579,10 @@ mod_ggplot2_server <- function(id, data) {
         cf <- if (is.null(cf) || !nzchar(cf)) colores$primario else cf
         # color ya aplicado directamente en el geom via cf
       }
+
+      # ── Eje Y desde cero ──
+      if (isTRUE(input$eje_y_cero) && !is.null(var_y))
+        p <- p + ggplot2::scale_y_continuous(limits = c(0, NA))
 
       # ── Facets — automático según cuántas variables se eligieron ──
       facet_col  <- if (nzchar(input$var_facet     %||% "")) input$var_facet     else NULL

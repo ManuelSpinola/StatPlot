@@ -12,45 +12,80 @@ tipos_grafico <- list(
   " " = c(
     "Ninguna (quitar capa base)" = "none"
   ),
-  "Resumen estadístico" = c(
-    "Barras (media)"   = "mean_bar",
-    "Línea (media)"    = "mean_line",
-    "Punto (media)"    = "mean_dot",
-    "Punto (mediana)"  = "median_dot",
-    "Línea (mediana)"  = "median_line"
+  "Media" = c(
+    "Barras (media)"     = "mean_bar",
+    "Línea (media)"      = "mean_line",
+    "Punto (media)"      = "mean_dot",
+    "Guión (media)"      = "mean_dash",
+    "Valor (media)"      = "mean_value",
+    "Área (media)"       = "mean_area"
+  ),
+  "Mediana" = c(
+    "Barras (mediana)"   = "median_bar",
+    "Punto (mediana)"    = "median_dot",
+    "Línea (mediana)"    = "median_line"
+  ),
+  "Conteo y suma" = c(
+    "Barras (conteo)"    = "count_bar",
+    "Barras (suma)"      = "sum_bar",
+    "Línea (conteo)"     = "count_line",
+    "Área (conteo)"      = "count_area"
   ),
   "Distribución" = c(
-    "Boxplot"          = "boxplot",
-    "Violín"           = "violin",
-    "Beeswarm"         = "beeswarm"
+    "Histograma"         = "histogram",
+    "Boxplot"            = "boxplot",
+    "Violín"             = "violin",
+    "Elipse"             = "ellipse"
   ),
   "Proporción" = c(
-    "Barras apiladas"  = "barstack",
-    "Área apilada"     = "areastack",
-    "Torta"            = "pie",
-    "Dona"             = "donut"
+    "Barras apiladas (abs)" = "barstack",
+    "Barras apiladas (rel)" = "barstack_rel",
+    "Área apilada (abs)"    = "areastack",
+    "Área apilada (rel)"    = "areastack_rel",
+    "Torta"                 = "pie",
+    "Dona"                  = "donut"
   ),
   "Datos crudos" = c(
-    "Puntos"           = "points",
-    "Puntos beeswarm"  = "points_beeswarm"
-  ),
-  "Especial" = c(
-    "Heatmap"          = "heatmap",
-    "Histograma"       = "histogram"
+    "Puntos"             = "points",
+    "Puntos jitter"      = "points_jitter",
+    "Puntos beeswarm"    = "points_beeswarm",
+    "Línea"              = "line",
+    "Área"               = "area",
+    "Heatmap"            = "heatmap"
   )
 )
 
 # ── Paletas disponibles ───────────────────────────────────────────────────────
-paletas_tidyplot <- c(
-  "Friendly (accesible)" = "friendly",
-  "Seaside"              = "seaside",
-  "Apple"                = "apple",
-  "Viridis"              = "viridis",
-  "Plasma"               = "plasma",
-  "Mako"                 = "mako",
-  "Blue-Brown"           = "blue2brown",
-  "Blue-Red"             = "blue2red",
-  "Spectral"             = "spectral"
+paletas_tidyplot <- list(
+  "Discretas" = c(
+    "Friendly (accesible)" = "friendly",
+    "Seaside"              = "seaside",
+    "Apple"                = "apple",
+    "Okabe-Ito"            = "okabeito",
+    "IBM"                  = "ibm",
+    "Metro"                = "metro",
+    "Candy"                = "candy",
+    "Friendly largo"       = "friendly_long"
+  ),
+  "Continuas" = c(
+    "Viridis"              = "viridis",
+    "Magma"                = "magma",
+    "Inferno"              = "inferno",
+    "Plasma"               = "plasma",
+    "Cividis"              = "cividis",
+    "Rocket"               = "rocket",
+    "Mako"                 = "mako",
+    "Turbo"                = "turbo",
+    "Blue-Pink-Yellow"     = "bluepinkyellow"
+  ),
+  "Divergentes" = c(
+    "Blue-Brown"           = "blue2brown",
+    "Blue-Red"             = "blue2red",
+    "BuRd"                 = "BuRd",
+    "BuYlRd"               = "BuYlRd",
+    "Spectral"             = "spectral",
+    "Icefire"              = "icefire"
+  )
 )
 
 # ── UI ────────────────────────────────────────────────────────────────────────
@@ -87,50 +122,36 @@ mod_tidyplots_ui <- function(id) {
           card_body(
             selectInput(ns("tipo"), "Gráfico",
                         choices  = tipos_grafico,
-                        selected = "mean_bar"),
+                        selected = "none"),
             tags$hr(),
             # Capas adicionales
             checkboxGroupInput(
               ns("capas"),
               label   = "Capas adicionales",
               choices = c(
-                "Barra de error (SEM)"  = "sem_errorbar",
-                "Barra de error (SD)"   = "sd_errorbar",
-                "IC 95%"                = "ci95_errorbar",
-                "Puntos de datos"       = "data_points",
-                "Beeswarm"              = "data_beeswarm",
-                "Smooth"                = "curvefit",
-                "Comparación (p-valor)" = "test_pvalue",
-                "Comparación (*)"       = "test_asterisks"
+                "── Dispersión ──"       = "",
+                "Barra error (SEM)"      = "sem_errorbar",
+                "Barra error (SD)"       = "sd_errorbar",
+                "Barra error (IC 95%)"   = "ci95_errorbar",
+                "Ribbon (SEM)"           = "sem_ribbon",
+                "Ribbon (IC 95%)"        = "ci95_ribbon",
+                "── Puntos ──"           = "",
+                "Puntos de datos"        = "data_points",
+                "Beeswarm"               = "data_beeswarm",
+                "── Etiquetas ──"        = "",
+                "Etiquetas de datos"     = "data_labels",
+                "Etiquetas (repel)"      = "data_labels_repel",
+                "── Ajuste ──"           = "",
+                "Smooth"                 = "curvefit",
+                "Línea de referencia"    = "reference_lines",
+                "── Estadísticas ──"     = "",
+                "Comparación (p-valor)"  = "test_pvalue",
+                "Comparación (*)"        = "test_asterisks"
               )
             )
           )
         ),
 
-        # ── Estética ───────────────────────────────────────────────────────
-        card(
-          card_header(bs_icon("palette", class = "me-1"), "Estética"),
-          card_body(
-            selectInput(ns("paleta"), "Paleta de color",
-                        choices  = paletas_tidyplot,
-                        selected = "friendly"),
-            sliderInput(ns("alpha"), "Transparencia",
-                        min = 0.1, max = 1, value = 0.8, step = 0.1),
-            checkboxInput(ns("invertir_paleta"), "Invertir paleta", value = FALSE),
-            tags$hr(),
-            textInput(ns("lbl_titulo"),    "Título",    placeholder = ""),
-            textInput(ns("lbl_caption"),   "Caption",   placeholder = ""),
-            textInput(ns("lbl_x"),         "Eje X",     placeholder = "automático"),
-            textInput(ns("lbl_y"),         "Eje Y",     placeholder = "automático"),
-            tags$hr(),
-            textInput(ns("nombre_grafico"), "Nombre del gráfico",
-                      placeholder = "para composición con patchwork"),
-            actionButton(ns("guardar_grafico"), "Guardar gráfico",
-                         icon  = bs_icon("bookmark-check"),
-                         class = "btn-primary btn-sm w-100"),
-            uiOutput(ns("graficos_guardados_msg"))
-          )
-        )
       ),
 
       # ── PANEL DERECHO ─────────────────────────────────────────────────────
@@ -141,7 +162,7 @@ mod_tidyplots_ui <- function(id) {
             title = tagList(bs_icon("image", class = "me-1"), "Gráfico"),
             card_body(
               uiOutput(ns("grafico_msg")),
-              plotOutput(ns("grafico"), height = "680px", width = "100%"),
+              plotOutput(ns("grafico"), height = "480px", width = "100%"),
               tags$hr(),
               div(
                 class = "d-flex gap-2 flex-wrap",
@@ -154,6 +175,60 @@ mod_tidyplots_ui <- function(id) {
                 downloadButton(ns("dl_svg"), "SVG",
                                icon  = bs_icon("download"),
                                class = "btn-sm btn-outline-primary")
+              ),
+              tags$hr(),
+              layout_columns(
+                col_widths = c(6, 6),
+                fill = FALSE,
+
+                card(
+                  card_header(bs_icon("fonts", class = "me-1"), "Etiquetas"),
+                  card_body(
+                    textInput(ns("nombre_grafico"), "Nombre del gráfico",
+                              placeholder = "para composición con patchwork"),
+                    textInput(ns("lbl_titulo"),  "Título",  placeholder = ""),
+                    textInput(ns("lbl_caption"), "Caption", placeholder = ""),
+                    textInput(ns("lbl_x"),       "Eje X",   placeholder = "automático"),
+                    textInput(ns("lbl_y"),       "Eje Y",   placeholder = "automático"),
+                    tags$hr(),
+                    actionButton(ns("guardar_grafico"), "Guardar gráfico",
+                                 icon  = bs_icon("bookmark-check"),
+                                 class = "btn-primary btn-sm w-100"),
+                    uiOutput(ns("graficos_guardados_msg"))
+                  )
+                ),
+
+                div(
+                  card(
+                    card_header(bs_icon("palette", class = "me-1"), "Estética"),
+                    card_body(
+                      selectInput(ns("tema"), "Tema",
+                                  choices = c(
+                                    "tidyplot"   = "tidyplot",
+                                    "ggplot2"    = "ggplot2",
+                                    "Minimal XY" = "minimal_xy",
+                                    "Minimal X"  = "minimal_x",
+                                    "Minimal Y"  = "minimal_y"
+                                  ), selected = "tidyplot"),
+                      sliderInput(ns("alpha"),   "Transparencia",
+                                  min = 0.1, max = 1,   value = 0.8, step = 0.1),
+                      sliderInput(ns("pt_size"), "Tamaño puntos/líneas",
+                                  min = 0.5, max = 5,   value = 2,   step = 0.5),
+                      sliderInput(ns("bins"),    "Bins (histograma)",
+                                  min = 5,   max = 100, value = 30,  step = 5),
+                      checkboxInput(ns("eje_y_cero"),      "Eje Y desde cero", value = FALSE),
+                      checkboxInput(ns("invertir_paleta"), "Invertir paleta",  value = FALSE)
+                    )
+                  ),
+                  card(
+                    card_header(bs_icon("palette2", class = "me-1"), "Color"),
+                    card_body(
+                      selectInput(ns("paleta"), "Paleta",
+                                  choices  = paletas_tidyplot,
+                                  selected = "friendly")
+                    )
+                  )
+                )
               )
             )
           ),
@@ -204,34 +279,38 @@ mod_tidyplots_server <- function(id, data) {
 
     # ── Paleta de colores ─────────────────────────────────────────────────────
     paleta_fn <- reactive({
-      pal     <- input$paleta %||% "friendly"
-      inv     <- isTRUE(input$invertir_paleta)
-      discretas   <- c("friendly", "seaside", "apple")
-      divergentes <- c("blue2brown", "blue2red", "spectral")
-      continuas   <- c("viridis", "plasma", "mako")
-
-      if (pal %in% discretas) {
-        fn <- switch(pal,
-          "friendly" = tidyplots::colors_discrete_friendly,
-          "seaside"  = tidyplots::colors_discrete_seaside,
-          "apple"    = tidyplots::colors_discrete_apple
-        )
-        if (inv) rev(fn) else fn
-      } else if (pal %in% continuas) {
-        fn <- switch(pal,
-          "viridis" = tidyplots::colors_continuous_viridis,
-          "plasma"  = tidyplots::colors_continuous_plasma,
-          "mako"    = tidyplots::colors_continuous_mako
-        )
-        if (inv) rev(fn) else fn
-      } else {
-        fn <- switch(pal,
-          "blue2brown" = tidyplots::colors_diverging_blue2brown,
-          "blue2red"   = tidyplots::colors_diverging_blue2red,
-          "spectral"   = tidyplots::colors_diverging_spectral
-        )
-        if (inv) rev(fn) else fn
-      }
+      pal <- input$paleta %||% "friendly"
+      inv <- isTRUE(input$invertir_paleta)
+      fn  <- switch(pal,
+        # Discretas
+        "friendly"      = tidyplots::colors_discrete_friendly,
+        "seaside"       = tidyplots::colors_discrete_seaside,
+        "apple"         = tidyplots::colors_discrete_apple,
+        "okabeito"      = tidyplots::colors_discrete_okabeito,
+        "ibm"           = tidyplots::colors_discrete_ibm,
+        "metro"         = tidyplots::colors_discrete_metro,
+        "candy"         = tidyplots::colors_discrete_candy,
+        "friendly_long" = tidyplots::colors_discrete_friendly_long,
+        # Continuas
+        "viridis"       = tidyplots::colors_continuous_viridis,
+        "magma"         = tidyplots::colors_continuous_magma,
+        "inferno"       = tidyplots::colors_continuous_inferno,
+        "plasma"        = tidyplots::colors_continuous_plasma,
+        "cividis"       = tidyplots::colors_continuous_cividis,
+        "rocket"        = tidyplots::colors_continuous_rocket,
+        "mako"          = tidyplots::colors_continuous_mako,
+        "turbo"         = tidyplots::colors_continuous_turbo,
+        "bluepinkyellow"= tidyplots::colors_continuous_bluepinkyellow,
+        # Divergentes
+        "blue2brown"    = tidyplots::colors_diverging_blue2brown,
+        "blue2red"      = tidyplots::colors_diverging_blue2red,
+        "BuRd"          = tidyplots::colors_diverging_BuRd,
+        "BuYlRd"        = tidyplots::colors_diverging_BuYlRd,
+        "spectral"      = tidyplots::colors_diverging_spectral,
+        "icefire"       = tidyplots::colors_diverging_icefire,
+        tidyplots::colors_discrete_friendly
+      )
+      if (inv) rev(fn) else fn
     })
 
     # ── Construir gráfico ─────────────────────────────────────────────────────
@@ -283,38 +362,78 @@ mod_tidyplots_server <- function(id, data) {
 
       # ── Geometría base ──
       tp <- switch(tipo,
-        "none"          = tp,
-        "mean_bar"      = tp |> tidyplots::add_mean_bar(alpha = alpha),
-        "mean_line"     = tp |> tidyplots::add_mean_line(alpha = alpha),
-        "mean_dot"      = tp |> tidyplots::add_mean_dot(size = 3),
-        "median_dot"    = tp |> tidyplots::add_median_dot(size = 3),
-        "median_line"   = tp |> tidyplots::add_median_line(alpha = alpha),
-        "boxplot"       = tp |> tidyplots::add_boxplot(alpha = alpha),
-        "violin"        = tp |> tidyplots::add_violin(alpha = alpha),
-        "beeswarm"      = tp |> tidyplots::add_data_points_beeswarm(alpha = alpha),
-        "barstack"      = tp |> tidyplots::add_barstack_absolute(),
-        "areastack"     = tp |> tidyplots::add_areastack_absolute(),
-        "pie"           = tp |> tidyplots::add_pie(),
-        "donut"         = tp |> tidyplots::add_donut(),
-        "points"        = tp |> tidyplots::add_data_points(alpha = alpha),
-        "points_beeswarm" = tp |> tidyplots::add_data_points_beeswarm(alpha = alpha),
-        "heatmap"       = tp |> tidyplots::add_heatmap(),
-        "histogram"     = tp |> tidyplots::add_histogram(),
+        "none"           = tp,
+        # Media
+        "mean_bar"       = tp |> tidyplots::add_mean_bar(alpha = alpha),
+        "mean_line"      = tp |> tidyplots::add_mean_line(alpha = alpha),
+        "mean_dot"       = tp |> tidyplots::add_mean_dot(size = pt_size),
+        "mean_dash"      = tp |> tidyplots::add_mean_dash(),
+        "mean_value"     = tp |> tidyplots::add_mean_value(),
+        "mean_area"      = tp |> tidyplots::add_mean_area(alpha = alpha),
+        # Mediana
+        "median_bar"     = tp |> tidyplots::add_median_bar(alpha = alpha),
+        "median_dot"     = tp |> tidyplots::add_median_dot(size = pt_size),
+        "median_line"    = tp |> tidyplots::add_median_line(alpha = alpha),
+        # Conteo y suma
+        "count_bar"      = tp |> tidyplots::add_count_bar(alpha = alpha),
+        "sum_bar"        = tp |> tidyplots::add_sum_bar(alpha = alpha),
+        "count_line"     = tp |> tidyplots::add_count_line(alpha = alpha),
+        "count_area"     = tp |> tidyplots::add_count_area(alpha = alpha),
+        # Distribución
+        "histogram"      = tp |> tidyplots::add_histogram(),
+        "boxplot"        = tp |> tidyplots::add_boxplot(alpha = alpha),
+        "violin"         = tp |> tidyplots::add_violin(alpha = alpha),
+        "ellipse"        = tp |> tidyplots::add_ellipse(alpha = alpha),
+        # Proporción
+        "barstack"       = tp |> tidyplots::add_barstack_absolute(),
+        "barstack_rel"   = tp |> tidyplots::add_barstack_relative(),
+        "areastack"      = tp |> tidyplots::add_areastack_absolute(),
+        "areastack_rel"  = tp |> tidyplots::add_areastack_relative(),
+        "pie"            = tp |> tidyplots::add_pie(),
+        "donut"          = tp |> tidyplots::add_donut(),
+        # Datos crudos
+        "points"         = tp |> tidyplots::add_data_points(alpha = alpha, size = pt_size),
+        "points_jitter"  = tp |> tidyplots::add_data_points_jitter(alpha = alpha, size = pt_size),
+        "points_beeswarm"= tp |> tidyplots::add_data_points_beeswarm(alpha = alpha, size = pt_size),
+        "beeswarm"       = tp |> tidyplots::add_data_points_beeswarm(alpha = alpha, size = pt_size),
+        "line"           = tp |> tidyplots::add_line(alpha = alpha),
+        "area"           = tp |> tidyplots::add_area(alpha = alpha),
+        "heatmap"        = tp |> tidyplots::add_heatmap(),
         tp |> tidyplots::add_mean_bar(alpha = alpha)
       )
 
       # ── Capas adicionales ──
-      if ("sem_errorbar"   %in% capas) tp <- tp |> tidyplots::add_sem_errorbar()
-      if ("sd_errorbar"    %in% capas) tp <- tp |> tidyplots::add_sd_errorbar()
-      if ("ci95_errorbar"  %in% capas) tp <- tp |> tidyplots::add_ci95_errorbar()
-      if ("data_points"    %in% capas) tp <- tp |> tidyplots::add_data_points(alpha = 0.5)
-      if ("data_beeswarm"  %in% capas) tp <- tp |> tidyplots::add_data_points_beeswarm(alpha = 0.5)
-      if ("curvefit"       %in% capas) tp <- tp |> tidyplots::add_curvefit()
-      if ("test_pvalue"    %in% capas) tp <- tp |> tidyplots::add_test_pvalue()
-      if ("test_asterisks" %in% capas) tp <- tp |> tidyplots::add_test_asterisks()
+      if ("sem_errorbar"    %in% capas) tp <- tp |> tidyplots::add_sem_errorbar()
+      if ("sd_errorbar"     %in% capas) tp <- tp |> tidyplots::add_sd_errorbar()
+      if ("ci95_errorbar"   %in% capas) tp <- tp |> tidyplots::add_ci95_errorbar()
+      if ("sem_ribbon"      %in% capas) tp <- tp |> tidyplots::add_sem_ribbon()
+      if ("ci95_ribbon"     %in% capas) tp <- tp |> tidyplots::add_ci95_ribbon()
+      if ("data_points"     %in% capas) tp <- tp |> tidyplots::add_data_points(alpha = 0.5, size = pt_size)
+      if ("data_beeswarm"   %in% capas) tp <- tp |> tidyplots::add_data_points_beeswarm(alpha = 0.5, size = pt_size)
+      if ("data_labels"     %in% capas) tp <- tp |> tidyplots::add_data_labels()
+      if ("data_labels_repel" %in% capas) tp <- tp |> tidyplots::add_data_labels_repel()
+      if ("curvefit"        %in% capas) tp <- tp |> tidyplots::add_curve_fit()
+      if ("reference_lines" %in% capas) tp <- tp |> tidyplots::add_reference_lines()
+      if ("test_pvalue"     %in% capas) tp <- tp |> tidyplots::add_test_pvalue()
+      if ("test_asterisks"  %in% capas) tp <- tp |> tidyplots::add_test_asterisks()
+
+      # ── Tema ──
+      tema <- input$tema %||% "tidyplot"
+      tp <- switch(tema,
+        "tidyplot"   = tp,
+        "ggplot2"    = tp |> tidyplots::theme_ggplot2(),
+        "minimal_xy" = tp |> tidyplots::theme_minimal_xy(),
+        "minimal_x"  = tp |> tidyplots::theme_minimal_x(),
+        "minimal_y"  = tp |> tidyplots::theme_minimal_y(),
+        tp
+      )
 
       # ── Paleta ──
       tp <- tp |> tidyplots::adjust_colors(paleta_fn())
+
+      # ── Eje Y desde cero ──
+      if (isTRUE(input$eje_y_cero))
+        tp <- tp |> tidyplots::adjust_y_axis(limits = c(0, NA))
 
       # ── Tamaño y fuente ──
       tp <- tp |>
