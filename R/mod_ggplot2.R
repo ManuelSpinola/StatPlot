@@ -18,9 +18,9 @@ geoms_disponibles <- function(tipo_x, tipo_y = NULL) {
   es_num <- function(t) t %in% c(num, dis)
 
   if (is.null(tipo_y)) {
-    # Una variable
     if (es_num(tipo_x))
       return(c(
+        "Ninguna (quitar capa base)" = "none",
         "Histograma"    = "histogram",
         "Densidad"      = "density",
         "Boxplot"       = "boxplot",
@@ -28,13 +28,14 @@ geoms_disponibles <- function(tipo_x, tipo_y = NULL) {
       ))
     if (tipo_x == cat)
       return(c(
+        "Ninguna (quitar capa base)" = "none",
         "Barras"        = "bar",
         "Torta"         = "pie"
       ))
   } else {
-    # Dos variables
     if (es_num(tipo_x) && es_num(tipo_y))
       return(c(
+        "Ninguna (quitar capa base)" = "none",
         "Dispersión"         = "point",
         "Líneas"             = "line",
         "Dispersión + smooth" = "point_smooth",
@@ -42,6 +43,7 @@ geoms_disponibles <- function(tipo_x, tipo_y = NULL) {
       ))
     if ((tipo_x == cat || tipo_x == dis) && es_num(tipo_y))
       return(c(
+        "Ninguna (quitar capa base)" = "none",
         "Puntos por grupo"   = "point_group",
         "Boxplot por grupo"  = "boxplot_group",
         "Violín por grupo"   = "violin_group",
@@ -49,18 +51,20 @@ geoms_disponibles <- function(tipo_x, tipo_y = NULL) {
       ))
     if (es_num(tipo_x) && (tipo_y == cat || tipo_y == dis))
       return(c(
+        "Ninguna (quitar capa base)" = "none",
         "Puntos por grupo"   = "point_group",
         "Boxplot por grupo"  = "boxplot_group",
         "Violín por grupo"   = "violin_group"
       ))
     if (tipo_x == tmp && es_num(tipo_y))
       return(c(
+        "Ninguna (quitar capa base)" = "none",
         "Líneas"             = "line",
         "Dispersión"         = "point",
         "Área"               = "area"
       ))
   }
-  c("Dispersión" = "point")
+  c("Ninguna (quitar capa base)" = "none", "Dispersión" = "point")
 }
 
 # Temas ggplot2 disponibles
@@ -145,7 +149,7 @@ mod_ggplot2_ui <- function(id) {
             title = tagList(bs_icon("image", class = "me-1"), "Gráfico"),
             card_body(
               uiOutput(ns("grafico_msg")),
-              plotOutput(ns("grafico"), height = "480px"),
+              plotOutput(ns("grafico"), height = "680px", width = "100%"),
               tags$hr(),
               div(
                 class = "d-flex gap-2 flex-wrap",
@@ -417,18 +421,21 @@ mod_ggplot2_server <- function(id, data) {
       p <- ggplot2::ggplot(df, aes_base)
 
       # ── Validaciones ──
-      if (geom %in% c("bar", "pie") && !is.null(var_y))
-        validate(need(FALSE, "Barras y torta requieren solo variable X. Quitá la variable Y."))
-      if (geom %in% c("point", "line", "point_smooth", "area",
-                      "boxplot_group", "violin_group", "bar_mean", "point_group") &&
-          is.null(var_y))
-        validate(need(FALSE, "Este gráfico requiere variable Y."))
+      if (geom != "none") {
+        if (geom %in% c("bar", "pie") && !is.null(var_y))
+          validate(need(FALSE, "Barras y torta requieren solo variable X. Quitá la variable Y."))
+        if (geom %in% c("point", "line", "point_smooth", "area",
+                        "boxplot_group", "violin_group", "bar_mean", "point_group") &&
+            is.null(var_y))
+          validate(need(FALSE, "Este gráfico requiere variable Y."))
+      }
 
       # Helper para pasar color/fill solo cuando cf no es NULL
       fill_cf  <- if (!is.null(cf)) list(fill  = cf) else list()
       color_cf <- if (!is.null(cf)) list(color = cf) else list()
 
       p <- switch(geom,
+        "none"          = p,
         "histogram"     = p + do.call(ggplot2::geom_histogram,
                                 c(list(bins = bins, alpha = alpha, color = "white"), fill_cf)),
         "density"       = p + do.call(ggplot2::geom_density,
@@ -608,12 +615,15 @@ mod_ggplot2_server <- function(id, data) {
       )
 
       p + ggplot2::theme(
-        plot.title       = ggplot2::element_text(face = "bold", size = 13,
+        plot.title       = ggplot2::element_text(face = "bold", size = 16,
                                                   color = colores$primario),
-        plot.subtitle    = ggplot2::element_text(size = 10, color = colores$texto),
-        axis.title       = ggplot2::element_text(size = 10, color = colores$texto),
+        plot.subtitle    = ggplot2::element_text(size = 13, color = colores$texto),
+        axis.title       = ggplot2::element_text(size = 14, color = colores$texto),
+        axis.text        = ggplot2::element_text(size = 12, color = colores$texto),
+        legend.text      = ggplot2::element_text(size = 12),
+        legend.title     = ggplot2::element_text(size = 13),
         strip.background = ggplot2::element_rect(fill = colores$primario, color = NA),
-        strip.text       = ggplot2::element_text(color = "white", face = "bold", size = 10)
+        strip.text       = ggplot2::element_text(color = "white", face = "bold", size = 12)
       )
     })
 

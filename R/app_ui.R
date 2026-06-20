@@ -31,6 +31,12 @@ app_ui <- function() {
     ),
 
     bslib::nav_panel(
+      title = "tidyplots",
+      icon  = bsicons::bs_icon("palette"),
+      mod_tidyplots_ui("tidyplots")
+    ),
+
+    bslib::nav_panel(
       title = "Composición",
       icon  = bsicons::bs_icon("grid"),
       mod_patchwork_ui("patchwork")
