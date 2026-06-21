@@ -129,24 +129,27 @@ mod_tidyplots_ui <- function(id) {
               ns("capas"),
               label   = "Capas adicionales",
               choices = c(
-                "── Dispersión ──"       = "",
-                "Barra error (SEM)"      = "sem_errorbar",
-                "Barra error (SD)"       = "sd_errorbar",
-                "Barra error (IC 95%)"   = "ci95_errorbar",
-                "Ribbon (SEM)"           = "sem_ribbon",
-                "Ribbon (IC 95%)"        = "ci95_ribbon",
-                "── Puntos ──"           = "",
-                "Puntos de datos"        = "data_points",
-                "Beeswarm"               = "data_beeswarm",
-                "── Etiquetas ──"        = "",
-                "Etiquetas de datos"     = "data_labels",
-                "Etiquetas (repel)"      = "data_labels_repel",
-                "── Ajuste ──"           = "",
-                "Smooth"                 = "curvefit",
-                "Línea de referencia"    = "reference_lines",
-                "── Estadísticas ──"     = "",
-                "Comparación (p-valor)"  = "test_pvalue",
-                "Comparación (*)"        = "test_asterisks"
+                "── Dispersión ──"                          = "",
+                "Error estándar de la media (SEM)"          = "sem_errorbar",
+                "Desvío estándar (SD)"                      = "sd_errorbar",
+                "Intervalo de confianza 95% (IC 95%)"       = "ci95_errorbar",
+                "Ribbon — Error estándar (SEM)"             = "sem_ribbon",
+                "Ribbon — Intervalo de confianza (IC 95%)"  = "ci95_ribbon",
+                "── Puntos ──"                              = "",
+                "Puntos de datos individuales"              = "data_points",
+                "Puntos beeswarm"                           = "data_beeswarm",
+                "── Etiquetas ──"                           = "",
+                "Valor de la media"                         = "mean_value_label",
+                "Valor de la mediana"                       = "median_value_label",
+                "Valor del conteo"                          = "count_value_label",
+                "Etiquetas de datos (puntos)"               = "data_labels",
+                "Etiquetas sin solapamiento (puntos)"       = "data_labels_repel",
+                "── Ajuste ──"                              = "",
+                "Curva de ajuste (smooth)"                  = "curvefit",
+                "Líneas de referencia"                      = "reference_lines",
+                "── Estadísticas ──"                        = "",
+                "Comparación — valor p"                     = "test_pvalue",
+                "Comparación — asteriscos (*)"              = "test_asterisks"
               )
             )
           )
@@ -323,7 +326,9 @@ mod_tidyplots_server <- function(id, data) {
       var_color <- if (nzchar(input$var_color %||% "")) input$var_color else NULL
       tipo      <- input$tipo
       capas     <- input$capas %||% character(0)
-      alpha     <- input$alpha %||% 0.8
+      alpha   <- input$alpha   %||% 0.8
+      pt_size <- input$pt_size %||% 2
+      bins    <- input$bins    %||% 30
       lbl_tit   <- input$lbl_titulo  %||% ""
       lbl_cap   <- input$lbl_caption %||% ""
       lbl_x     <- if (nzchar(input$lbl_x %||% "")) input$lbl_x else NULL
@@ -410,8 +415,18 @@ mod_tidyplots_server <- function(id, data) {
       if ("ci95_ribbon"     %in% capas) tp <- tp |> tidyplots::add_ci95_ribbon()
       if ("data_points"     %in% capas) tp <- tp |> tidyplots::add_data_points(alpha = 0.5, size = pt_size)
       if ("data_beeswarm"   %in% capas) tp <- tp |> tidyplots::add_data_points_beeswarm(alpha = 0.5, size = pt_size)
-      if ("data_labels"     %in% capas) tp <- tp |> tidyplots::add_data_labels()
-      if ("data_labels_repel" %in% capas) tp <- tp |> tidyplots::add_data_labels_repel()
+      fmt_num <- function(x) formatC(x, format = "f", digits = 1, big.mark = " ", decimal.mark = ",")
+      if ("mean_value_label"   %in% capas) tp <- tp |>
+        tidyplots::add(ggplot2::stat_summary(fun = mean, geom = "text",
+          ggplot2::aes(label = fmt_num(ggplot2::after_stat(y))),
+          size = 14 / ggplot2::.pt, vjust = -0.5))
+      if ("median_value_label" %in% capas) tp <- tp |>
+        tidyplots::add(ggplot2::stat_summary(fun = median, geom = "text",
+          ggplot2::aes(label = fmt_num(ggplot2::after_stat(y))),
+          size = 14 / ggplot2::.pt, vjust = -0.5))
+      if ("count_value_label"  %in% capas) tp <- tp |> tidyplots::add_count_value(fontsize = 14)
+      if ("data_labels"        %in% capas) tp <- tp |> tidyplots::add_data_labels()
+      if ("data_labels_repel"  %in% capas) tp <- tp |> tidyplots::add_data_labels_repel()
       if ("curvefit"        %in% capas) tp <- tp |> tidyplots::add_curve_fit()
       if ("reference_lines" %in% capas) tp <- tp |> tidyplots::add_reference_lines()
       if ("test_pvalue"     %in% capas) tp <- tp |> tidyplots::add_test_pvalue()
@@ -490,7 +505,9 @@ mod_tidyplots_server <- function(id, data) {
       var_color <- if (nzchar(input$var_color %||% "")) input$var_color else NULL
       tipo      <- input$tipo
       capas     <- input$capas %||% character(0)
-      alpha     <- input$alpha %||% 0.8
+      alpha   <- input$alpha   %||% 0.8
+      pt_size <- input$pt_size %||% 2
+      bins    <- input$bins    %||% 30
       pal       <- input$paleta %||% "friendly"
       lbl_tit   <- input$lbl_titulo  %||% ""
       lbl_cap   <- input$lbl_caption %||% ""
