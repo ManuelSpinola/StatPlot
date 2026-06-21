@@ -73,37 +73,44 @@ mod_upload_ui <- function(id) {
 
             # ── Panel izquierdo: selector ──────────────────────────────
             div(
-              p(class = "text-muted small mb-3",
-                "Elegí un dataset de ejemplo o subí tu propio archivo CSV o Excel."),
-
+              # Sección 1: Datos de ejemplo
+              tags$p(class = "fw-bold mb-2",
+                     style = paste0("color:", colores$primario, ";"),
+                     bs_icon("database", class = "me-1"), "Datos de ejemplo"),
               radioButtons(
                 ns("fuente"),
-                label = "Fuente de datos",
+                label = NULL,
                 choices = c(
                   "Pingüinos de Palmer"        = "penguins",
                   "Gapminder"                  = "gapminder",
                   "Contaminación río Meuse"    = "meuse",
                   "Peso al nacer"              = "birthwt",
                   "Ácaros oribátidos (mites)"  = "mites",
-                  "── tidyplots ──"            = "",
                   "Animales"                   = "animals",
                   "Clima"                      = "climate",
+                  "Dinosaurios"                = "dinosaurs",
                   "Energía"                    = "energy",
-                  "Gastos"                     = "spendings",
-                  "Subir mi archivo"           = "subir"
+                  "Gastos"                     = "spendings"
                 ),
                 selected = "penguins"
               ),
+              uiOutput(ns("info_dataset")),
 
-              conditionalPanel(
-                condition = sprintf("input['%s'] == 'subir'", ns("fuente")),
-                fileInput(
-                  ns("archivo"),
-                  label       = NULL,
-                  accept      = c(".csv", ".xlsx", ".xls"),
-                  placeholder = "Seleccionar archivo...",
-                  buttonLabel = "Buscar"
-                )
+              tags$hr(),
+
+              # Sección 2: Subir tus propios datos
+              tags$p(class = "fw-bold mb-1",
+                     style = paste0("color:", colores$primario, ";"),
+                     bs_icon("upload", class = "me-1"), "Subir tus propios datos"),
+              p(class = "text-muted small mb-2",
+                "Podés cargar archivos en formato ",
+                strong("CSV"), " o ", strong("Excel (.xlsx, .xls)"), "."),
+              fileInput(
+                ns("archivo"),
+                label       = NULL,
+                accept      = c(".csv", ".xlsx", ".xls"),
+                placeholder = "Seleccionar archivo...",
+                buttonLabel = "Buscar"
               ),
 
               tags$hr(),
@@ -116,8 +123,7 @@ mod_upload_ui <- function(id) {
                 ),
                 selected = "conservar"
               ),
-              uiOutput(ns("na_info")),
-              uiOutput(ns("info_dataset"))
+              uiOutput(ns("na_info"))
             ),
 
             # ── Panel derecho: vista previa ────────────────────────────
@@ -212,7 +218,7 @@ mod_upload_server <- function(id) {
 
     # ── Objeto .rds del dataset activo (evita doble lectura) ────────────────
     obj_dataset <- reactive({
-      req(input$fuente != "subir", nzchar(input$fuente))
+      req(nzchar(input$fuente %||% ""))
       path <- file.path(data_path, paste0(input$fuente, ".rds"))
       validate(need(file.exists(path),
                     paste0("No se encontró el archivo: ", basename(path))))
@@ -221,7 +227,8 @@ mod_upload_server <- function(id) {
 
     # ── Datos activos ────────────────────────────────────────────────────────
     datos <- reactive({
-      if (input$fuente == "subir") {
+      req(nzchar(input$fuente %||% ""))
+      if (!is.null(input$archivo)) {
         req(input$archivo)
         ext <- tolower(tools::file_ext(input$archivo$name))
         df  <- leer_archivo(input$archivo$datapath, ext)
@@ -236,21 +243,20 @@ mod_upload_server <- function(id) {
 
     # ── Info del dataset ─────────────────────────────────────────────────────
     output$info_dataset <- renderUI({
-      if (input$fuente == "subir") return(NULL)
+      req(nzchar(input$fuente %||% ""))
+      if (!is.null(input$archivo)) return(NULL)
       m <- obj_dataset()$meta
       div(
         class = "mt-3 p-3 rounded",
         style = paste0("background:", colores$fondo,
                        "; border-left: 4px solid ", colores$primario, ";"),
         tags$p(class = "fw-bold mb-1",
-               style = paste0("color:", colores$primario), m$name),
-        tags$p(class = "small text-muted mb-2", m$description),
+               style = paste0("color:", colores$primario), m$titulo),
+        tags$p(class = "small text-muted mb-1", m$desc),
+        tags$p(class = "small mb-1",
+               tags$b("Fuente: "), m$fuente),
         tags$p(class = "small mb-0",
-               tags$b("Filas: "), m$n_rows, " · ",
-               tags$b("Columnas: "), m$n_cols, " · ",
-               tags$b("Fuente: "), m$source),
-        if (!is.null(m$referencia))
-          tags$p(class = "small text-muted fst-italic mb-0", m$referencia)
+               tags$b("Variables: "), m$vars)
       )
     })
 
