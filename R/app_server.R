@@ -18,6 +18,9 @@ app_server <- function(input, output, session) {
     c(graficos_guardados(), graficos_tidyplots())
   })
 
+  # Gráficos avanzados
+  mod_avanzado_server("avanzado", data = app_data)
+
   # Composición con patchwork
   mod_patchwork_server("patchwork", graficos = todos_graficos)
 

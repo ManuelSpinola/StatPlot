@@ -165,7 +165,7 @@ mod_tidyplots_ui <- function(id) {
             title = tagList(bs_icon("image", class = "me-1"), "Gráfico"),
             card_body(
               uiOutput(ns("grafico_msg")),
-              plotOutput(ns("grafico"), height = "480px", width = "100%"),
+              plotOutput(ns("grafico"), height = "680px", width = "100%"),
               tags$hr(),
               div(
                 class = "d-flex gap-2 flex-wrap",

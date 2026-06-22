@@ -27,7 +27,10 @@ Imports:
     ggrepel,
     colourpicker,
     tidyr,
-    tidyplots
+    tidyplots,
+    ggalluvial,
+    treemapify,
+    ggcorrplot
 Suggests:
     ade4,
     gapminder,

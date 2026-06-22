@@ -37,6 +37,12 @@ app_ui <- function() {
     ),
 
     bslib::nav_panel(
+      title = "Gráficos avanzados",
+      icon  = bsicons::bs_icon("graph-up"),
+      mod_avanzado_ui("avanzado")
+    ),
+
+    bslib::nav_panel(
       title = "Composición",
       icon  = bsicons::bs_icon("grid"),
       mod_patchwork_ui("patchwork")
