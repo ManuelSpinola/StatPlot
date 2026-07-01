@@ -15,8 +15,13 @@ app_ui <- function() {
       img(src = "www/hexsticker_StatPlot.png", height = "38px"),
       span("StatPlot", style = "font-weight: 600;")
     ),
-    theme = tema_app,
-    lang  = "es",
+    theme  = tema_app,
+    lang   = "es",
+    footer = div(
+      class = "text-center small py-2",
+      style = paste0("background:", colores$primario, "; color: white;"),
+      "Manuel Sp\u00ednola \u00b7 ICOMVIS \u00b7 Universidad Nacional \u00b7 Costa Rica"
+    ),
 
     bslib::nav_panel(
       title = "Datos",
