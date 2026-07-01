@@ -6,3 +6,4 @@
 rsconnect/
 renv/library/
 renv/staging/
+.Rhistory
