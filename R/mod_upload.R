@@ -48,16 +48,6 @@ mod_upload_ui <- function(id) {
   ns <- NS(id)
 
   tagList(
-    div(
-      class = "px-1 pt-2 pb-2",
-      h4(style = paste0("color:", colores$primario, "; font-weight:700; margin-bottom:4px;"),
-         bs_icon("database", class = "me-2"),
-         "Datos"),
-      p(class = "text-muted small mb-0",
-        "Cargá un dataset de ejemplo o subí tus propios datos. ",
-        "Explorá las variables para decidir qué gráfico crear.")
-    ),
-
     navset_card_tab(
 
       # ══════════════════════════════════════════════════════════════════════
@@ -65,7 +55,18 @@ mod_upload_ui <- function(id) {
       # ══════════════════════════════════════════════════════════════════════
       nav_panel(
         title = tagList(bs_icon("folder2-open", class = "me-1"), "Cargar datos"),
+        fillable = FALSE,
         card_body(
+
+          div(
+            class = "px-1 pb-2",
+            h4(style = paste0("color:", colores$primario, "; font-weight:700; margin-bottom:4px;"),
+               bs_icon("database", class = "me-2"),
+               "Datos"),
+            p(class = "text-muted small mb-0",
+              "Cargá un dataset de ejemplo o subí tus propios datos. ",
+              "Explorá las variables para decidir qué gráfico crear.")
+          ),
 
           layout_columns(
             col_widths = c(4, 8),
@@ -141,6 +142,7 @@ mod_upload_ui <- function(id) {
       # ══════════════════════════════════════════════════════════════════════
       nav_panel(
         title = tagList(bs_icon("table", class = "me-1"), "Variables"),
+        fillable = FALSE,
         card_body(
 
           p(class = "text-muted small mb-3",
@@ -160,6 +162,7 @@ mod_upload_ui <- function(id) {
 
             div(
               card(
+                fill = FALSE,
                 card_header(bs_icon("book", class = "me-1"),
                             "Tipos de variables"),
                 card_body(
@@ -466,11 +469,13 @@ mod_upload_server <- function(id) {
             col_widths = c(6, 6),
             fill = FALSE,
             card(
+              fill = FALSE,
               card_header(bs_icon("bullseye", class = "me-1"),
                           "Tendencia central"),
               card_body(tableOutput(ns("tbl_tendencia")))
             ),
             card(
+              fill = FALSE,
               card_header(bs_icon("arrows-expand", class = "me-1"),
                           "Dispersión"),
               card_body(tableOutput(ns("tbl_dispersion")))
@@ -479,11 +484,13 @@ mod_upload_server <- function(id) {
         )
       } else if (tipo == "Categórica") {
         card(
+          fill = FALSE,
           card_header(bs_icon("bar-chart", class = "me-1"), "Frecuencias"),
           card_body(tableOutput(ns("tbl_frecuencias")))
         )
       } else if (tipo == "Temporal") {
         card(
+          fill = FALSE,
           card_header(bs_icon("calendar", class = "me-1"), "Rango temporal"),
           card_body(tableOutput(ns("tbl_temporal")))
         )
@@ -581,6 +588,7 @@ mod_upload_server <- function(id) {
       if (is.null(sugerencias)) return(NULL)
 
       card(
+        fill = FALSE,
         card_header(bs_icon("lightbulb", class = "me-1"),
                     paste("Gráficos sugeridos para", tipo)),
         card_body(
