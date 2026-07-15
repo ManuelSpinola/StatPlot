@@ -128,19 +128,7 @@ mod_upload_ui <- function(id) {
                 placeholder = "Seleccionar archivo...",
                 buttonLabel = "Buscar"
               ),
-              uiOutput(ns("resumen_datos_propio")),
-
-              tags$hr(),
-              radioButtons(
-                ns("manejo_na"),
-                label    = "Valores perdidos (NA)",
-                choices  = c(
-                  "Conservar"              = "conservar",
-                  "Eliminar filas con NA"  = "eliminar"
-                ),
-                selected = "conservar"
-              ),
-              uiOutput(ns("na_info"))
+              uiOutput(ns("resumen_datos_propio"))
             ),
 
             # ── Panel derecho: vista previa de mis datos ────────────────
@@ -169,6 +157,23 @@ mod_upload_ui <- function(id) {
 
           uiOutput(ns("tabla_tipos")),
           uiOutput(ns("tipos_aplicados_msg")),
+
+          tags$hr(),
+          layout_columns(
+            col_widths = c(4, 8),
+            fill = FALSE,
+            radioButtons(
+              ns("manejo_na"),
+              label    = tagList(bs_icon("exclamation-diamond", class = "me-1"),
+                                 "Valores perdidos (NA)"),
+              choices  = c(
+                "Conservar"              = "conservar",
+                "Eliminar filas con NA"  = "eliminar"
+              ),
+              selected = "conservar"
+            ),
+            uiOutput(ns("na_info"))
+          ),
 
           tags$hr(),
 
