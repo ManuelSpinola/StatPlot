@@ -717,7 +717,7 @@ mod_upload_server <- function(id) {
       else
         div(class = "alert alert-info small py-1 px-2 mt-2 mb-0",
             bs_icon("info-circle", class = "me-1"),
-            paste0(n_na, " fila(s) con NA. Podés eliminarlas arriba."))
+            paste0(n_na, " fila(s) con NA. Podés eliminarlas a la izquierda."))
     })
 
     # ── Retornar datos ───────────────────────────────────────────────────────
