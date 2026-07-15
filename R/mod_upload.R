@@ -33,10 +33,10 @@ color_tipo <- function(tipo) {
 }
 
 # Leer archivo CSV o Excel
-leer_archivo <- function(path, ext) {
+leer_archivo <- function(path, ext, sep = ",") {
   tryCatch({
     if (ext == "csv") {
-      read.csv(path, stringsAsFactors = FALSE, check.names = FALSE)
+      as.data.frame(readr::read_delim(path, delim = sep, show_col_types = FALSE))
     } else {
       as.data.frame(readxl::read_excel(path))
     }
@@ -127,6 +127,16 @@ mod_upload_ui <- function(id) {
                 accept      = c(".csv", ".xlsx", ".xls"),
                 placeholder = "Seleccionar archivo...",
                 buttonLabel = "Buscar"
+              ),
+              selectInput(
+                ns("separador"),
+                label    = "Separador (CSV):",
+                choices  = c(
+                  "Coma (,)"         = ",",
+                  "Punto y coma (;)" = ";",
+                  "Tabulador"        = "\t"
+                ),
+                selected = ","
               ),
               uiOutput(ns("resumen_datos_propio"))
             ),
@@ -260,7 +270,7 @@ mod_upload_server <- function(id) {
     datos_propio <- reactive({
       req(input$archivo)
       ext <- tolower(tools::file_ext(input$archivo$name))
-      df  <- leer_archivo(input$archivo$datapath, ext)
+      df  <- leer_archivo(input$archivo$datapath, ext, sep = input$separador %||% ",")
       validate(need(!is.null(df),
                     "No se pudo leer el archivo. Verificá que sea CSV o Excel."))
       df |> dplyr::mutate(dplyr::across(where(is.character), as.factor))
@@ -717,7 +727,7 @@ mod_upload_server <- function(id) {
       else
         div(class = "alert alert-info small py-1 px-2 mt-2 mb-0",
             bs_icon("info-circle", class = "me-1"),
-            paste0(n_na, " fila(s) con NA. Podés eliminarlas a la izquierda."))
+            paste0(n_na, " fila(s) con NA."))
     })
 
     # ── Retornar datos ───────────────────────────────────────────────────────
