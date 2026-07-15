@@ -51,10 +51,10 @@ mod_upload_ui <- function(id) {
     navset_card_tab(
 
       # ══════════════════════════════════════════════════════════════════════
-      # PESTAÑA 1: Datos
+      # PESTAÑA 1: Datos de ejemplo
       # ══════════════════════════════════════════════════════════════════════
       nav_panel(
-        title = tagList(bs_icon("folder2-open", class = "me-1"), "Cargar datos"),
+        title = tagList(bs_icon("database", class = "me-1"), "Datos de ejemplo"),
         fillable = FALSE,
         card_body(
 
@@ -74,10 +74,6 @@ mod_upload_ui <- function(id) {
 
             # ── Panel izquierdo: selector ──────────────────────────────
             div(
-              # Sección 1: Datos de ejemplo
-              tags$p(class = "fw-bold mb-2",
-                     style = paste0("color:", colores$primario, ";"),
-                     bs_icon("database", class = "me-1"), "Datos de ejemplo"),
               radioButtons(
                 ns("fuente"),
                 label = NULL,
@@ -95,14 +91,33 @@ mod_upload_ui <- function(id) {
                 ),
                 selected = "penguins"
               ),
-              uiOutput(ns("info_dataset")),
+              uiOutput(ns("info_dataset"))
+            ),
 
+            # ── Panel derecho: vista previa ────────────────────────────
+            div(
+              uiOutput(ns("badges_variables")),
               tags$hr(),
+              DT::DTOutput(ns("tabla_preview"))
+            )
+          )
+        )
+      ), # /PESTAÑA 1
 
-              # Sección 2: Subir tus propios datos
-              tags$p(class = "fw-bold mb-1",
-                     style = paste0("color:", colores$primario, ";"),
-                     bs_icon("upload", class = "me-1"), "Subir tus propios datos"),
+      # ══════════════════════════════════════════════════════════════════════
+      # PESTAÑA 2: Mis datos
+      # ══════════════════════════════════════════════════════════════════════
+      nav_panel(
+        title = tagList(bs_icon("upload", class = "me-1"), "Mis datos"),
+        fillable = FALSE,
+        card_body(
+
+          layout_columns(
+            col_widths = c(4, 8),
+            fill = FALSE,
+
+            # ── Panel izquierdo: subir archivo ──────────────────────────
+            div(
               p(class = "text-muted small mb-2",
                 "Podés cargar archivos en formato ",
                 strong("CSV"), " o ", strong("Excel (.xlsx, .xls)"), "."),
@@ -113,6 +128,7 @@ mod_upload_ui <- function(id) {
                 placeholder = "Seleccionar archivo...",
                 buttonLabel = "Buscar"
               ),
+              uiOutput(ns("resumen_datos_propio")),
 
               tags$hr(),
               radioButtons(
@@ -127,18 +143,18 @@ mod_upload_ui <- function(id) {
               uiOutput(ns("na_info"))
             ),
 
-            # ── Panel derecho: vista previa ────────────────────────────
+            # ── Panel derecho: vista previa de mis datos ────────────────
             div(
-              uiOutput(ns("badges_variables")),
+              uiOutput(ns("cards_datos_propio")),
               tags$hr(),
-              DT::DTOutput(ns("tabla_preview"))
+              DT::DTOutput(ns("tabla_preview_propio"))
             )
           )
         )
-      ), # /PESTAÑA 1
+      ), # /PESTAÑA 2
 
       # ══════════════════════════════════════════════════════════════════════
-      # PESTAÑA 2: Variables
+      # PESTAÑA 3: Variables
       # ══════════════════════════════════════════════════════════════════════
       nav_panel(
         title = tagList(bs_icon("table", class = "me-1"), "Variables"),
@@ -204,7 +220,7 @@ mod_upload_ui <- function(id) {
             )
           )
         )
-      ) # /PESTAÑA 2
+      ) # /PESTAÑA 3
 
     ) # /navset_card_tab
   )
@@ -228,20 +244,77 @@ mod_upload_server <- function(id) {
       readRDS(path)
     })
 
-    # ── Datos activos ────────────────────────────────────────────────────────
-    datos <- reactive({
+    # ── Datos de ejemplo (solo la fuente seleccionada) ───────────────────────
+    datos_ejemplo <- reactive({
       req(nzchar(input$fuente %||% ""))
+      obj_dataset()$data |>
+        dplyr::mutate(dplyr::across(where(is.character), as.factor))
+    })
+
+    # ── Datos propios (solo el archivo subido) ───────────────────────────────
+    datos_propio <- reactive({
+      req(input$archivo)
+      ext <- tolower(tools::file_ext(input$archivo$name))
+      df  <- leer_archivo(input$archivo$datapath, ext)
+      validate(need(!is.null(df),
+                    "No se pudo leer el archivo. Verificá que sea CSV o Excel."))
+      df |> dplyr::mutate(dplyr::across(where(is.character), as.factor))
+    })
+
+    # ── Datos activos (unificados: prioriza archivo propio) ──────────────────
+    datos <- reactive({
+      req(nzchar(input$fuente %||% "") || !is.null(input$archivo))
       if (!is.null(input$archivo)) {
-        req(input$archivo)
-        ext <- tolower(tools::file_ext(input$archivo$name))
-        df  <- leer_archivo(input$archivo$datapath, ext)
-        validate(need(!is.null(df),
-                      "No se pudo leer el archivo. Verificá que sea CSV o Excel."))
-        df |> dplyr::mutate(dplyr::across(where(is.character), as.factor))
+        datos_propio()
       } else {
-        obj_dataset()$data |>
-          dplyr::mutate(dplyr::across(where(is.character), as.factor))
+        datos_ejemplo()
       }
+    })
+
+    # ── Vista previa de datos propios ────────────────────────────────────────
+    output$resumen_datos_propio <- renderUI({
+      req(datos_propio())
+      d <- datos_propio()
+      div(class = "small text-muted mt-2",
+          bs_icon("check-circle-fill",
+                  style = paste0("color:", colores$exito), class = "me-1"),
+          paste0(nrow(d), " filas \u00b7 ", ncol(d), " columnas"))
+    })
+
+    output$cards_datos_propio <- renderUI({
+      req(datos_propio())
+      d    <- datos_propio()
+      tipos <- sapply(d, clasificar_variable)
+      div(
+        class = "d-flex flex-wrap gap-2 mb-3",
+        lapply(seq_along(tipos), function(i) {
+          tags$span(
+            class = "badge",
+            style = paste0("background:", color_tipo(tipos[i]),
+                           "; font-size: 0.78rem;"),
+            paste0(names(tipos)[i], " (", tipos[i], ")")
+          )
+        })
+      )
+    })
+
+    output$tabla_preview_propio <- DT::renderDT({
+      req(datos_propio())
+      DT::datatable(
+        datos_propio(),
+        options = list(
+          pageLength = 8,
+          scrollX    = TRUE,
+          language   = list(
+            search     = "Buscar:",
+            lengthMenu = "Mostrar _MENU_ filas",
+            info       = "Mostrando _START_ a _END_ de _TOTAL_ registros",
+            paginate   = list(previous = "Anterior", `next` = "Siguiente")
+          )
+        ),
+        rownames = FALSE,
+        class    = "table table-sm table-hover"
+      )
     })
 
     # ── Info del dataset ─────────────────────────────────────────────────────
